@@ -75,6 +75,9 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
 .duty-h b small{font-size:13px}
 .duty-s{font-size:12px;color:var(--sub);margin-top:4px}
 .duty .bar>div{background:repeating-linear-gradient(45deg,var(--purple),var(--purple) 8px,#b49dff 8px,#b49dff 16px)}
+details.old{margin-top:4px}
+details.old summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--sub);padding:6px 4px}
+details.old[open] summary{margin-bottom:6px}
 .empty{color:var(--sub);font-weight:700;font-size:14px;text-align:center;padding:14px}
 .pop{animation:pop .4s ease}
 @keyframes pop{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
@@ -234,7 +237,11 @@ function render() {
     ? `${fmt(nx.left)}<small>日</small><div class="ml" style="font-size:12px">${nx.end}（あと${dd(today, nx.end)}日）</div>`
     : '-';
 
-  $('gList').innerHTML = g.length ? g.sort((a, b) => a.end.localeCompare(b.end)).map(x => {
+  // 再描画で折りたたみが閉じないよう、開いていたものを覚えておく
+  const opened = new Set([...document.querySelectorAll('details[data-k][open]')].map(e => e.dataset.k));
+  const fold = (k, label, body) => `<details class="old" data-k="${k}" ${opened.has(k) ? 'open' : ''}><summary>${label}</summary>${body}</details>`;
+
+  const grantRow = x => {
     const ex = x.end < today, soon = !ex && dd(today, x.end) <= 60 && x.left > 0;
     const tag = ex ? '<span class="tag t-d">失効</span>' : soon ? '<span class="tag t-w">期限間近！</span>' : '';
     const p = x.days ? x.used / x.days * 100 : 0;
@@ -243,7 +250,12 @@ function render() {
       <div class="bar"><div style="width:${p}%"></div></div>
       <div class="gr">残 ${fmt(x.left)}日</div>
       <button class="del" onclick="delG(${x.i})">削除</button></div>`;
-  }).join('') : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
+  };
+  const expired = g.filter(x => x.end < today).sort((a, b) => b.end.localeCompare(a.end));
+  $('gList').innerHTML = g.length
+    ? g.filter(x => x.end >= today).sort((a, b) => a.end.localeCompare(b.end)).map(grantRow).join('')
+      + (expired.length ? fold('expired', `失効した付与（${expired.length}件）`, expired.map(grantRow).join('')) : '')
+    : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
 
   // 年5日取得義務：10日以上の付与の付与日から1年間。今日を含む期間がなければ直近に終わった期間を出す
   const periods = g.filter(x => x.days >= 10 && x.start <= today)
@@ -263,14 +275,21 @@ function render() {
       <div class="duty-s">${status}</div></div>`;
   } else $('duty').innerHTML = '';
 
-  $('uList').innerHTML = S.uses.length ? S.uses.map((u, i) => ({ ...u, i }))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(u => `<div class="li"><div style="flex:1">
+  const useRow = u => `<div class="li"><div style="flex:1">
       <b>${u.date}（${youbi(u.date)}）</b>
       <span class="chip ${u.days == 0.5 ? 'c-half' : 'c-full'}">${u.days == 0.5 ? '半休' : '全休'}</span>
       ${u.memo ? `<span class="ml">${esc(u.memo)}</span>` : ''}
       ${paid[u.i] < u.days ? '<span class="tag t-d">残日数不足</span>' : ''}</div>
-      <button class="del" onclick="editU(${u.i})">編集</button></div>`).join('')
+      <button class="del" onclick="editU(${u.i})">編集</button></div>`;
+  const year = today.slice(0, 4);
+  const uses = S.uses.map((u, i) => ({ ...u, i })).sort((a, b) => b.date.localeCompare(a.date));
+  const pastYears = [...new Set(uses.filter(u => u.date.slice(0, 4) < year).map(u => u.date.slice(0, 4)))];
+  $('uList').innerHTML = uses.length
+    ? uses.filter(u => u.date.slice(0, 4) >= year).map(useRow).join('')
+      + pastYears.map(y => {
+        const ys = uses.filter(u => u.date.startsWith(y));
+        return fold(y, `${y}年（${fmt(ys.reduce((s, u) => s + u.days, 0))}日）`, ys.map(useRow).join(''));
+      }).join('')
     : '<div class="empty">休んだら記録しよう ✈️</div>';
 
   const last = lastExport(), stale = last ? dd(last, today) : null;
