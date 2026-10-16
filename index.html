@@ -65,6 +65,8 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
 .bar>div{height:100%;background:repeating-linear-gradient(45deg,var(--sky),var(--sky) 8px,#7fd6ff 8px,#7fd6ff 16px);border-right:2px solid var(--line)}
 .tag{font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;border:2px solid var(--line);margin-left:4px;white-space:nowrap}
 .t-d{background:var(--red-l);color:var(--red)}.t-w{background:var(--yellow)}
+.t-ok{background:var(--mint-l)}.t-p{background:var(--purple-l)}
+.gr .lost{font-size:12px;color:var(--red)}
 .chip{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}
 .c-full{background:var(--pink-l);color:#d63384}.c-half{background:var(--sky-l);color:#1a7fb5}
 .duty{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--purple-l);font-weight:700;font-size:14px}
@@ -243,18 +245,19 @@ function render() {
 
   const grantRow = x => {
     const ex = x.end < today, soon = !ex && dd(today, x.end) <= 60 && x.left > 0;
-    const tag = ex ? '<span class="tag t-d">失効</span>' : soon ? '<span class="tag t-w">期限間近！</span>' : '';
     const p = x.days ? x.used / x.days * 100 : 0;
+    const tag = ex ? (x.left ? `<span class="tag t-p">${Math.round(p)}%使用</span>` : '<span class="tag t-ok">🎉 使い切り</span>')
+      : soon ? '<span class="tag t-w">期限間近！</span>' : '';
     return `<div class="li">
       <div class="gi"><div><b>${fmt(x.days)}日</b> 付与 ${tag}</div><div class="ml">${x.start} 〜 ${x.end}</div></div>
       <div class="bar"><div style="width:${p}%"></div></div>
-      <div class="gr">残 ${fmt(x.left)}日</div>
+      <div class="gr">${ex ? `使用 ${fmt(x.used)}日${x.left ? `<div class="lost">失効 ${fmt(x.left)}日</div>` : ''}` : `残 ${fmt(x.left)}日`}</div>
       <button class="del" onclick="delG(${x.i})">削除</button></div>`;
   };
   const expired = g.filter(x => x.end < today).sort((a, b) => b.end.localeCompare(a.end));
   $('gList').innerHTML = g.length
     ? g.filter(x => x.end >= today).sort((a, b) => a.end.localeCompare(b.end)).map(grantRow).join('')
-      + (expired.length ? fold('expired', `失効した付与（${expired.length}件）`, expired.map(grantRow).join('')) : '')
+      + (expired.length ? fold('expired', `期限が終わった付与（${expired.length}件）`, expired.map(grantRow).join('')) : '')
     : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
 
   // 年5日取得義務：10日以上の付与の付与日から1年間。今日を含む期間がなければ直近に終わった期間を出す
