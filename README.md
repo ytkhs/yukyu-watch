@@ -97,6 +97,7 @@ python3 -m http.server 8000
 |---|---|
 | `index.html` | アプリ本体 |
 | `apple-touch-icon.png` | ホーム画面のアイコン（180×180） |
+| `favicon.png` | ブラウザのタブのアイコン（64×64） |
 | `.nojekyll` | GitHub Pages で Jekyll の変換を無効にする |
 
 ## ライセンス
