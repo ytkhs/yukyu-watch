@@ -209,14 +209,18 @@ function pop(id) { const el = $(id); el.classList.remove('pop'); void el.offsetW
 
 // 期限の近い付与分から順に引き当てる。paid[i] は uses[i] のうち付与から引き当てられた日数
 function calc() {
-  const g = S.grants.map((x, i) => ({ ...x, i, left: x.days, used: 0 }));
+  const g = S.grants.map((x, i) => ({ ...x, i, left: x.days, used: 0, planned: 0 }));
   const paid = S.uses.map(() => 0);
   S.uses.map((u, i) => ({ ...u, i }))
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach(u => {
       g.filter(x => x.start <= u.date && x.end >= u.date && x.left > 0)
         .sort((a, b) => a.end.localeCompare(b.end))
-        .forEach(x => { const t = Math.min(u.days - paid[u.i], x.left); x.left -= t; x.used += t; paid[u.i] += t; });
+        .forEach(x => {
+          const t = Math.min(u.days - paid[u.i], x.left);
+          x.left -= t; x.used += t; paid[u.i] += t;
+          if (u.date > today) x.planned += t;
+        });
     });
   return { g, paid };
 }
@@ -229,9 +233,10 @@ function render() {
   const lost = g.filter(x => x.end < today).reduce((s, x) => s + x.left, 0);
 
   $('mRem').innerHTML = `${fmt(rem)}<small>日</small>`;
-  // 取得率の分母は付与日が来た付与の合計。残り・取得済み・失効済みと同じ範囲で数える
-  const taken = sumPaid(u => u.date <= today), planned = sumPaid(u => u.date > today);
-  const granted = g.filter(x => x.start <= today).reduce((s, x) => s + x.days, 0);
+  // 「残り」と同じく、いま有効な付与の中で数える。有効な付与の日数 = 取得済み + 予定 + 残り
+  const planned = valid.reduce((s, x) => s + x.planned, 0);
+  const taken = valid.reduce((s, x) => s + x.used, 0) - planned;
+  const granted = valid.reduce((s, x) => s + x.days, 0);
   $('mUsed').innerHTML = `${fmt(taken)}<small>日</small>${granted ? `<span class="pct">${Math.round(taken / granted * 100)}%</span>` : ''}`
     + (granted ? `<div class="ml" style="font-size:12px">付与 ${fmt(granted)}日中</div>` : '')
     + (planned ? `<div class="ml" style="font-size:12px">ほかに予定 ${fmt(planned)}日</div>` : '');
