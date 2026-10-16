@@ -54,6 +54,10 @@ button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
 .li .gi{min-width:185px}
 .li .gr{min-width:70px;text-align:right;font-weight:800}
 @media (max-width:520px){.li .gi{flex-basis:100%;min-width:0}}
+header .h-add{margin-left:auto;height:38px;padding:0 16px;font-size:14px}
+dialog.card{margin:auto;width:min(420px,calc(100% - 32px));color:var(--ink)}
+dialog::backdrop{background:rgba(43,35,80,.35)}
+.dlg-actions{justify-content:flex-end;margin-top:8px}
 .warn{margin-bottom:16px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:var(--yellow-l);font-weight:700;font-size:14px}
 .bar{flex:1;height:14px;background:var(--sky-l);border:2px solid var(--line);border-radius:999px;overflow:hidden;min-width:60px}
 .bar>div{height:100%;background:repeating-linear-gradient(45deg,var(--sky),var(--sky) 8px,#7fd6ff 8px,#7fd6ff 16px);border-right:2px solid var(--line)}
@@ -76,6 +80,7 @@ button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
 <header>
   <div class="logo">🌴</div>
   <h1>有休ノート<small>休むのも仕事のうち！</small></h1>
+  <button id="gOpen" class="b-pink h-add">＋ 付与</button>
 </header>
 
 <div id="warn"></div>
@@ -87,16 +92,19 @@ button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
   <div class="m m4"><div class="ml">💨 失効済み</div><div class="mv" id="mLost">0</div></div>
 </div>
 
-<div class="card">
+<dialog id="gDlg" class="card">
   <h3>🎁 付与を追加</h3>
   <div class="row">
     <label class="f">日数<input id="gDays" type="number" min="0.5" step="0.5" value="10" style="width:90px"></label>
     <label class="f">付与日<input id="gStart" type="date"></label>
     <label class="f">期限<input id="gEnd" type="date"></label>
-    <button id="gAdd" class="b-pink">＋ 追加</button>
   </div>
   <div class="err" id="gErr"></div>
-</div>
+  <div class="row dlg-actions">
+    <button id="gCancel" class="b-plain" autofocus>キャンセル</button>
+    <button id="gAdd" class="b-pink">追加</button>
+  </div>
+</dialog>
 
 <div class="card">
   <h3>✈️ 休みを記録</h3>
@@ -207,7 +215,7 @@ function render() {
       <div class="bar"><div style="width:${p}%"></div></div>
       <div class="gr">残 ${fmt(x.left)}日</div>
       <button class="del" onclick="delG(${x.i})">削除</button></div>`;
-  }).join('') : '<div class="empty">まずは付与を追加してね 🎁</div>';
+  }).join('') : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
 
   // 年5日取得義務（10日以上付与された直近の付与日から1年）
   const big = g.filter(x => x.days >= 10).sort((a, b) => b.start.localeCompare(a.start))[0];
@@ -244,12 +252,20 @@ $('gStart').addEventListener('input', () => { $('gEnd').value = addY($('gStart')
 ['gDays', 'gStart', 'gEnd'].forEach(id => $(id).addEventListener('input', () => $('gErr').textContent = ''));
 ['uDate', 'uDays'].forEach(id => $(id).addEventListener('input', () => $('uErr').textContent = ''));
 
+$('gOpen').onclick = () => { $('gErr').textContent = ''; $('gDlg').showModal(); };
+$('gCancel').onclick = () => $('gDlg').close();
+// ダイアログ自身の余白をタップしても target は dialog になるため、枠の外かどうかは座標で見る
+$('gDlg').addEventListener('click', e => {
+  const r = $('gDlg').getBoundingClientRect();
+  if (e.target === $('gDlg') && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) $('gDlg').close();
+});
+
 $('gAdd').onclick = () => {
   const d = parseFloat($('gDays').value), s = $('gStart').value, e = $('gEnd').value;
   if (!(d > 0)) return $('gErr').textContent = '日数を入力してください';
   if (!s || !e) return $('gErr').textContent = '付与日と期限を入力してください';
   if (e < s) return $('gErr').textContent = '期限は付与日より後にしてください';
-  S.grants.push({ days: d, start: s, end: e }); render(); pop('mRem');
+  S.grants.push({ days: d, start: s, end: e }); $('gDlg').close(); render(); pop('mRem');
 };
 
 $('uAdd').onclick = () => {
