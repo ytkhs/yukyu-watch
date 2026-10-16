@@ -72,6 +72,7 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
 .duty{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--purple-l);font-weight:700;font-size:14px}
 .duty .bar{display:flex;margin-top:6px;background:#fff}
 .duty .bar>.plan{background:repeating-linear-gradient(45deg,#d7cbff,#d7cbff 8px,#e9e2ff 8px,#e9e2ff 16px)}
+.m .pct{font-size:18px;margin-left:6px;padding:0 8px;border-radius:999px;background:#fff;border:2px solid var(--line);vertical-align:middle}
 .duty-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .duty-h b{font-size:20px}
 .duty-h b small{font-size:13px}
@@ -228,8 +229,11 @@ function render() {
   const lost = g.filter(x => x.end < today).reduce((s, x) => s + x.left, 0);
 
   $('mRem').innerHTML = `${fmt(rem)}<small>日</small>`;
-  const planned = sumPaid(u => u.date > today);
-  $('mUsed').innerHTML = `${fmt(sumPaid(u => u.date <= today))}<small>日</small>`
+  // 取得率の分母は付与日が来た付与の合計。残り・取得済み・失効済みと同じ範囲で数える
+  const taken = sumPaid(u => u.date <= today), planned = sumPaid(u => u.date > today);
+  const granted = g.filter(x => x.start <= today).reduce((s, x) => s + x.days, 0);
+  $('mUsed').innerHTML = `${fmt(taken)}<small>日</small>${granted ? `<span class="pct">${Math.round(taken / granted * 100)}%</span>` : ''}`
+    + (granted ? `<div class="ml" style="font-size:12px">付与 ${fmt(granted)}日中</div>` : '')
     + (planned ? `<div class="ml" style="font-size:12px">ほかに予定 ${fmt(planned)}日</div>` : '');
   $('mLost').innerHTML = `${fmt(lost)}<small>日</small>`;
   $('mLost').style.color = lost > 0 ? 'var(--red)' : '';
@@ -257,7 +261,7 @@ function render() {
   const expired = g.filter(x => x.end < today).sort((a, b) => b.end.localeCompare(a.end));
   $('gList').innerHTML = g.length
     ? g.filter(x => x.end >= today).sort((a, b) => a.end.localeCompare(b.end)).map(grantRow).join('')
-      + (expired.length ? fold('expired', `期限が終わった付与（${expired.length}件）`, expired.map(grantRow).join('')) : '')
+      + (expired.length ? fold('expired', `期限が終わった付与（${expired.length}件・平均 ${Math.round(expired.reduce((s, x) => s + x.used, 0) / expired.reduce((s, x) => s + x.days, 0) * 100)}%使用）`, expired.map(grantRow).join('')) : '')
     : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
 
   // 年5日取得義務：10日以上の付与の付与日から1年間。今日を含む期間がなければ直近に終わった期間を出す
