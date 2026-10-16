@@ -93,3 +93,7 @@ python3 -m http.server 8000
 | `index.html` | アプリ本体 |
 | `apple-touch-icon.png` | ホーム画面のアイコン（180×180） |
 | `.nojekyll` | GitHub Pages で Jekyll の変換を無効にする |
+
+## ライセンス
+
+[MIT](LICENSE)
