@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>有休ノート</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="有休ノート">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fff8ec">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2b2350;--sub:#7a729c;--line:#2b2350;
+  --pink:#ff7eb6;--pink-l:#ffe1ef;--yellow:#ffd23f;--yellow-l:#fff4c7;
+  --mint:#3ddbb0;--mint-l:#d6fbef;--sky:#5cc8ff;--sky-l:#dcf3ff;
+  --purple:#9b7bff;--purple-l:#ece5ff;--red:#ff5a5f;--red-l:#ffe3e3;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font-family:"M PLUS Rounded 1c",system-ui,sans-serif;line-height:1.6;
+  background:#fff8ec;
+  background-image:radial-gradient(var(--pink-l) 2px,transparent 2px),radial-gradient(var(--sky-l) 2px,transparent 2px);
+  background-size:28px 28px;background-position:0 0,14px 14px}
+main{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+header .logo{width:52px;height:52px;border-radius:16px;background:var(--yellow);border:3px solid var(--line);
+  box-shadow:4px 4px 0 var(--line);display:grid;place-items:center;font-size:28px;transform:rotate(-6deg)}
+h1{font-size:28px;font-weight:800;margin:0;letter-spacing:.02em}
+h1 small{display:block;font-size:13px;font-weight:700;color:var(--sub)}
+.card{background:#fff;border:3px solid var(--line);border-radius:20px;box-shadow:5px 5px 0 var(--line);padding:18px 20px;margin-top:22px}
+.card h3{margin:0 0 12px;font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.m{border:3px solid var(--line);border-radius:18px;padding:14px 16px;box-shadow:4px 4px 0 var(--line);transition:transform .15s}
+.m:hover{transform:translate(-2px,-2px) rotate(-1deg)}
+.m .ml{font-size:13px;font-weight:700}
+.m .mv{font-size:30px;font-weight:800;line-height:1.2}
+.m .mv small{font-size:16px}
+.m1{background:var(--pink-l)}.m2{background:var(--yellow-l)}.m3{background:var(--mint-l)}.m4{background:var(--purple-l)}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--sub)}
+input,select{font:inherit;font-weight:700;color:var(--ink);background:#fff;border:2.5px solid var(--line);border-radius:12px;height:42px;padding:0 12px;outline:none}
+input:focus,select:focus{background:var(--yellow-l)}
+button{font:inherit;font-weight:800;cursor:pointer;color:var(--ink);border:2.5px solid var(--line);border-radius:999px;
+  height:42px;padding:0 20px;box-shadow:3px 3px 0 var(--line);transition:transform .1s,box-shadow .1s}
+button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
+.b-pink{background:var(--pink);color:#fff}.b-mint{background:var(--mint)}.b-plain{background:#fff}
+.del{height:32px;padding:0 12px;font-size:13px;background:#fff;box-shadow:2px 2px 0 var(--line)}
+.err{font-size:13px;font-weight:700;color:var(--red);min-height:20px;margin-top:6px}
+.li{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 12px;border:2px dashed #d9d3f0;border-radius:14px;margin-bottom:8px;font-size:14px;background:#fff}
+.li .ml{font-size:12px;color:var(--sub);font-weight:700}
+.li .gi{min-width:185px}
+.li .gr{min-width:70px;text-align:right;font-weight:800}
+@media (max-width:520px){.li .gi{flex-basis:100%;min-width:0}}
+.warn{margin-bottom:16px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:var(--yellow-l);font-weight:700;font-size:14px}
+.bar{flex:1;height:14px;background:var(--sky-l);border:2px solid var(--line);border-radius:999px;overflow:hidden;min-width:60px}
+.bar>div{height:100%;background:repeating-linear-gradient(45deg,var(--sky),var(--sky) 8px,#7fd6ff 8px,#7fd6ff 16px);border-right:2px solid var(--line)}
+.tag{font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;border:2px solid var(--line);margin-left:4px;white-space:nowrap}
+.t-d{background:var(--red-l);color:var(--red)}.t-w{background:var(--yellow)}
+.chip{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}
+.c-full{background:var(--pink-l);color:#d63384}.c-half{background:var(--sky-l);color:#1a7fb5}
+.duty{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--purple-l);font-weight:700;font-size:14px}
+.duty .bar{margin-top:6px;background:#fff}
+.duty .bar>div{background:repeating-linear-gradient(45deg,var(--purple),var(--purple) 8px,#b49dff 8px,#b49dff 16px)}
+.empty{color:var(--sub);font-weight:700;font-size:14px;text-align:center;padding:14px}
+.pop{animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+.confetti{position:fixed;top:-10px;width:10px;height:14px;border-radius:3px;pointer-events:none;animation:fall 1.4s linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.6}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="logo">🌴</div>
+  <h1>有休ノート<small>休むのも仕事のうち！</small></h1>
+</header>
+
+<div id="warn"></div>
+
+<div class="grid">
+  <div class="m m1"><div class="ml">🎒 残り</div><div class="mv" id="mRem">0</div></div>
+  <div class="m m2"><div class="ml">⏰ 次に失効</div><div class="mv" id="mNext">-</div></div>
+  <div class="m m3"><div class="ml">🏖️ 取得済み</div><div class="mv" id="mUsed">0</div></div>
+  <div class="m m4"><div class="ml">💨 失効済み</div><div class="mv" id="mLost">0</div></div>
+</div>
+
+<div class="card">
+  <h3>🎁 付与を追加</h3>
+  <div class="row">
+    <label class="f">日数<input id="gDays" type="number" min="0.5" step="0.5" value="10" style="width:90px"></label>
+    <label class="f">付与日<input id="gStart" type="date"></label>
+    <label class="f">期限<input id="gEnd" type="date"></label>
+    <button id="gAdd" class="b-pink">＋ 追加</button>
+  </div>
+  <div class="err" id="gErr"></div>
+</div>
+
+<div class="card">
+  <h3>✈️ 休みを記録</h3>
+  <div class="row">
+    <label class="f">取得日<input id="uDate" type="date"></label>
+    <label class="f">単位<select id="uDays"><option value="1">全休</option><option value="0.5">半休</option></select></label>
+    <label class="f">メモ<input id="uMemo" type="text" placeholder="温泉旅行" style="width:170px"></label>
+    <button id="uAdd" class="b-mint">記録する</button>
+  </div>
+  <div class="err" id="uErr"></div>
+</div>
+
+<div class="card">
+  <h3>📦 付与ごとの状況</h3>
+  <div id="gList"></div>
+  <div id="duty"></div>
+</div>
+
+<div class="card">
+  <h3>📅 取得履歴</h3>
+  <div id="uList"></div>
+</div>
+
+<div class="row" style="margin-top:24px">
+  <button id="exp" class="b-plain">💾 バックアップを保存</button>
+  <button id="imp" class="b-plain">📂 バックアップから復元</button>
+  <input id="file" type="file" accept=".json" style="display:none">
+  <span id="msg" style="font-weight:700;color:var(--sub)"></span>
+</div>
+</main>
+
+<script>
+const K = 'pto-tracker-v1';
+let S = { grants: [], uses: [] };
+try { const r = localStorage.getItem(K); if (r) S = JSON.parse(r); } catch (e) {}
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = iso(new Date());
+const addY = (s, y) => { const d = new Date(s + 'T00:00:00'); d.setFullYear(d.getFullYear() + y); d.setDate(d.getDate() - 1); return iso(d); };
+const fmt = n => (Math.round(n * 10) / 10).toString();
+const dd = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const youbi = s => '日月火水木金土'[new Date(s + 'T00:00:00').getDay()];
+
+$('gStart').value = today; $('gEnd').value = addY(today, 2); $('uDate').value = today;
+
+function save() { try { localStorage.setItem(K, JSON.stringify(S)); } catch (e) {} }
+
+const KE = K + '-exported';
+const lastExport = () => { try { return localStorage.getItem(KE); } catch (e) { return null; } };
+function markExported() { try { localStorage.setItem(KE, today); } catch (e) {} }
+
+function confetti() {
+  const colors = ['#ff7eb6', '#ffd23f', '#3ddbb0', '#5cc8ff', '#9b7bff'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDelay = Math.random() * .4 + 's';
+    c.style.animationDuration = 1 + Math.random() * .8 + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2400);
+  }
+}
+function pop(id) { const el = $(id); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+
+// 期限の近い付与分から順に引き当てる
+function calc() {
+  const g = S.grants.map((x, i) => ({ ...x, i, left: x.days, used: 0 }));
+  const unalloc = [];
+  S.uses.map((u, i) => ({ ...u, i }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .forEach(u => {
+      let need = u.days;
+      g.filter(x => x.start <= u.date && x.end >= u.date && x.left > 0)
+        .sort((a, b) => a.end.localeCompare(b.end))
+        .forEach(x => { const t = Math.min(need, x.left); x.left -= t; x.used += t; need -= t; });
+      if (need > 0) unalloc.push(u.i);
+    });
+  return { g, unalloc };
+}
+
+function render() {
+  const { g, unalloc } = calc();
+  const valid = g.filter(x => x.end >= today && x.start <= today);
+  const rem = valid.reduce((s, x) => s + x.left, 0);
+  const lost = g.filter(x => x.end < today).reduce((s, x) => s + x.left, 0);
+
+  $('mRem').innerHTML = `${fmt(rem)}<small>日</small>`;
+  $('mUsed').innerHTML = `${fmt(S.uses.reduce((s, u) => s + u.days, 0))}<small>日</small>`;
+  $('mLost').innerHTML = `${fmt(lost)}<small>日</small>`;
+  $('mLost').style.color = lost > 0 ? 'var(--red)' : '';
+
+  const nx = valid.filter(x => x.left > 0).sort((a, b) => a.end.localeCompare(b.end))[0];
+  $('mNext').innerHTML = nx
+    ? `${fmt(nx.left)}<small>日</small><div class="ml" style="font-size:12px">${nx.end}（あと${dd(today, nx.end)}日）</div>`
+    : '-';
+
+  $('gList').innerHTML = g.length ? g.sort((a, b) => a.end.localeCompare(b.end)).map(x => {
+    const ex = x.end < today, soon = !ex && dd(today, x.end) <= 60 && x.left > 0;
+    const tag = ex ? '<span class="tag t-d">失効</span>' : soon ? '<span class="tag t-w">期限間近！</span>' : '';
+    const p = x.days ? x.used / x.days * 100 : 0;
+    return `<div class="li">
+      <div class="gi"><div><b>${fmt(x.days)}日</b> 付与 ${tag}</div><div class="ml">${x.start} 〜 ${x.end}</div></div>
+      <div class="bar"><div style="width:${p}%"></div></div>
+      <div class="gr">残 ${fmt(x.left)}日</div>
+      <button class="del" onclick="delG(${x.i})">削除</button></div>`;
+  }).join('') : '<div class="empty">まずは付与を追加してね 🎁</div>';
+
+  // 年5日取得義務（10日以上付与された直近の付与日から1年）
+  const big = g.filter(x => x.days >= 10).sort((a, b) => b.start.localeCompare(a.start))[0];
+  if (big) {
+    const end1 = addY(big.start, 1);
+    const n = S.uses.filter(u => u.date >= big.start && u.date <= end1).reduce((s, u) => s + u.days, 0);
+    $('duty').innerHTML = `<div class="duty">🎯 年5日取得義務（${big.start}〜${end1}）：${fmt(n)} / 5日
+      ${n >= 5 ? '🎉 達成！' : `あと${fmt(5 - n)}日`}
+      <div class="bar"><div style="width:${Math.min(n / 5, 1) * 100}%"></div></div></div>`;
+  } else $('duty').innerHTML = '';
+
+  $('uList').innerHTML = S.uses.length ? S.uses.map((u, i) => ({ ...u, i }))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(u => `<div class="li"><div style="flex:1">
+      <b>${u.date}（${youbi(u.date)}）</b>
+      <span class="chip ${u.days == 0.5 ? 'c-half' : 'c-full'}">${u.days == 0.5 ? '半休' : '全休'}</span>
+      ${u.memo ? `<span class="ml">${esc(u.memo)}</span>` : ''}
+      ${unalloc.includes(u.i) ? '<span class="tag t-d">残日数不足</span>' : ''}</div>
+      <button class="del" onclick="delU(${u.i})">削除</button></div>`).join('')
+    : '<div class="empty">休んだら記録しよう ✈️</div>';
+
+  const last = lastExport(), stale = last ? dd(last, today) : null;
+  $('warn').innerHTML = (S.grants.length || S.uses.length) && (stale === null || stale >= 14)
+    ? `<div class="warn">💾 ${stale === null ? 'まだ一度もバックアップしていません' : `前回のバックアップから${stale}日たっています`}。下の「バックアップを保存」からiCloud Driveに保存しておこう</div>`
+    : '';
+
+  save();
+}
+
+window.delG = i => { if (confirm('この付与を削除しますか？')) { S.grants.splice(i, 1); render(); } };
+window.delU = i => { S.uses.splice(i, 1); render(); };
+
+$('gStart').addEventListener('input', () => { $('gEnd').value = addY($('gStart').value, 2); });
+['gDays', 'gStart', 'gEnd'].forEach(id => $(id).addEventListener('input', () => $('gErr').textContent = ''));
+['uDate', 'uDays'].forEach(id => $(id).addEventListener('input', () => $('uErr').textContent = ''));
+
+$('gAdd').onclick = () => {
+  const d = parseFloat($('gDays').value), s = $('gStart').value, e = $('gEnd').value;
+  if (!(d > 0)) return $('gErr').textContent = '日数を入力してください';
+  if (!s || !e) return $('gErr').textContent = '付与日と期限を入力してください';
+  if (e < s) return $('gErr').textContent = '期限は付与日より後にしてください';
+  S.grants.push({ days: d, start: s, end: e }); render(); pop('mRem');
+};
+
+$('uAdd').onclick = () => {
+  const d = $('uDate').value, n = parseFloat($('uDays').value);
+  if (!d) return $('uErr').textContent = '取得日を入力してください';
+  const already = S.uses.filter(u => u.date === d).reduce((s, u) => s + u.days, 0);
+  if (already + n > 1) return $('uErr').textContent = 'その日はすでに1日分記録済みです';
+  S.uses.push({ date: d, days: n, memo: $('uMemo').value.trim() });
+  $('uMemo').value = ''; render(); pop('mRem'); pop('mUsed'); confetti();
+};
+
+$('exp').onclick = async () => {
+  const name = `yukyu-note-${today}.json`;
+  const file = new File([JSON.stringify(S, null, 1)], name, { type: 'application/json' });
+  try {
+    // PCの共有シートには「ファイルに保存」がないため、共有はタッチ端末に限る
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] });
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file); a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') $('msg').textContent = '保存できませんでした';
+    return;
+  }
+  markExported(); render();
+  $('msg').textContent = '保存しました';
+};
+$('imp').onclick = () => $('file').click();
+$('file').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => {
+    let d;
+    try { d = JSON.parse(t); if (!d.grants || !d.uses) throw 0; }
+    catch (_) { $('msg').textContent = 'ファイル形式が違います'; return; }
+    if ((S.grants.length || S.uses.length) &&
+      !confirm(`今のデータ（付与${S.grants.length}件・取得${S.uses.length}件）は、このファイルの内容（付与${d.grants.length}件・取得${d.uses.length}件）で上書きされます。復元しますか？`)) return;
+    S = d; render(); $('msg').textContent = '復元しました';
+  });
+  e.target.value = '';
+};
+
+render();
+</script>
+</body>
+</html>
