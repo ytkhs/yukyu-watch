@@ -57,7 +57,9 @@ button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--line)}
 header .h-add{margin-left:auto;height:38px;padding:0 16px;font-size:14px}
 dialog.card{margin:auto;width:min(420px,calc(100% - 32px));color:var(--ink)}
 dialog::backdrop{background:rgba(43,35,80,.35)}
-.dlg-actions{justify-content:flex-end;margin-top:8px}
+.dlg-actions{justify-content:flex-end;flex-wrap:nowrap;margin-top:8px}
+.dlg-actions button{padding:0 14px}
+.dlg-actions .b-danger{margin-right:auto;background:#fff;color:var(--red)}
 .warn{margin-bottom:16px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:var(--yellow-l);font-weight:700;font-size:14px}
 .bar{flex:1;height:14px;background:var(--sky-l);border:2px solid var(--line);border-radius:999px;overflow:hidden;min-width:60px}
 .bar>div{height:100%;background:repeating-linear-gradient(45deg,var(--sky),var(--sky) 8px,#7fd6ff 8px,#7fd6ff 16px);border-right:2px solid var(--line)}
@@ -106,6 +108,21 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
   </div>
 </dialog>
 
+<dialog id="uDlg" class="card">
+  <h3>✏️ 記録を編集</h3>
+  <div class="row">
+    <label class="f">取得日<input id="eDate" type="date"></label>
+    <label class="f">単位<select id="eDays"><option value="1">全休</option><option value="0.5">半休</option></select></label>
+    <label class="f">メモ<input id="eMemo" type="text" style="width:170px"></label>
+  </div>
+  <div class="err" id="eErr"></div>
+  <div class="row dlg-actions">
+    <button id="eDel" class="b-danger">削除</button>
+    <button id="eCancel" class="b-plain" autofocus>キャンセル</button>
+    <button id="eSave" class="b-mint">保存</button>
+  </div>
+</dialog>
+
 <div class="card">
   <h3>✈️ 休みを記録</h3>
   <div class="row">
@@ -144,12 +161,17 @@ try { const r = localStorage.getItem(K); if (r) S = JSON.parse(r); } catch (e) {
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const today = iso(new Date());
+let today = iso(new Date());
 const addY = (s, y) => { const d = new Date(s + 'T00:00:00'); d.setFullYear(d.getFullYear() + y); d.setDate(d.getDate() - 1); return iso(d); };
 const fmt = n => (Math.round(n * 10) / 10).toString();
 const dd = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const youbi = s => '日月火水木金土'[new Date(s + 'T00:00:00').getDay()];
+const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v + 'T00:00:00'));
+const isHalf = v => typeof v === 'number' && v > 0 && Number.isInteger(v * 2);
+const isData = d => d && Array.isArray(d.grants) && Array.isArray(d.uses)
+  && d.grants.every(x => isHalf(x.days) && isDate(x.start) && isDate(x.end) && x.start <= x.end)
+  && d.uses.every(u => (u.days === 1 || u.days === 0.5) && isDate(u.date) && (u.memo === undefined || typeof u.memo === 'string'));
 
 $('gStart').value = today; $('gEnd').value = addY(today, 2); $('uDate').value = today;
 
@@ -174,30 +196,31 @@ function confetti() {
 }
 function pop(id) { const el = $(id); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 
-// 期限の近い付与分から順に引き当てる
+// 期限の近い付与分から順に引き当てる。paid[i] は uses[i] のうち付与から引き当てられた日数
 function calc() {
   const g = S.grants.map((x, i) => ({ ...x, i, left: x.days, used: 0 }));
-  const unalloc = [];
+  const paid = S.uses.map(() => 0);
   S.uses.map((u, i) => ({ ...u, i }))
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach(u => {
-      let need = u.days;
       g.filter(x => x.start <= u.date && x.end >= u.date && x.left > 0)
         .sort((a, b) => a.end.localeCompare(b.end))
-        .forEach(x => { const t = Math.min(need, x.left); x.left -= t; x.used += t; need -= t; });
-      if (need > 0) unalloc.push(u.i);
+        .forEach(x => { const t = Math.min(u.days - paid[u.i], x.left); x.left -= t; x.used += t; paid[u.i] += t; });
     });
-  return { g, unalloc };
+  return { g, paid };
 }
 
 function render() {
-  const { g, unalloc } = calc();
+  const { g, paid } = calc();
+  const sumPaid = f => S.uses.reduce((s, u, i) => f(u) ? s + paid[i] : s, 0);
   const valid = g.filter(x => x.end >= today && x.start <= today);
   const rem = valid.reduce((s, x) => s + x.left, 0);
   const lost = g.filter(x => x.end < today).reduce((s, x) => s + x.left, 0);
 
   $('mRem').innerHTML = `${fmt(rem)}<small>日</small>`;
-  $('mUsed').innerHTML = `${fmt(S.uses.reduce((s, u) => s + u.days, 0))}<small>日</small>`;
+  const planned = sumPaid(u => u.date > today);
+  $('mUsed').innerHTML = `${fmt(sumPaid(u => u.date <= today))}<small>日</small>`
+    + (planned ? `<div class="ml" style="font-size:12px">ほかに予定 ${fmt(planned)}日</div>` : '');
   $('mLost').innerHTML = `${fmt(lost)}<small>日</small>`;
   $('mLost').style.color = lost > 0 ? 'var(--red)' : '';
 
@@ -217,13 +240,19 @@ function render() {
       <button class="del" onclick="delG(${x.i})">削除</button></div>`;
   }).join('') : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
 
-  // 年5日取得義務（10日以上付与された直近の付与日から1年）
-  const big = g.filter(x => x.days >= 10).sort((a, b) => b.start.localeCompare(a.start))[0];
-  if (big) {
-    const end1 = addY(big.start, 1);
-    const n = S.uses.filter(u => u.date >= big.start && u.date <= end1).reduce((s, u) => s + u.days, 0);
-    $('duty').innerHTML = `<div class="duty">🎯 年5日取得義務（${big.start}〜${end1}）：${fmt(n)} / 5日
-      ${n >= 5 ? '🎉 達成！' : `あと${fmt(5 - n)}日`}
+  // 年5日取得義務：10日以上の付与の付与日から1年間。今日を含む期間がなければ直近に終わった期間を出す
+  const periods = g.filter(x => x.days >= 10 && x.start <= today)
+    .map(x => ({ start: x.start, end: addY(x.start, 1) }))
+    .sort((a, b) => b.start.localeCompare(a.start));
+  const per = periods.find(p => p.end >= today) || periods[0];
+  if (per) {
+    const inPer = u => u.date >= per.start && u.date <= per.end;
+    const n = sumPaid(u => inPer(u) && u.date <= today), m = sumPaid(u => inPer(u) && u.date > today);
+    const status = per.end < today
+      ? (n >= 5 ? '🎉 達成' : `⚠️ ${fmt(5 - n)}日足りませんでした`)
+      : (n >= 5 ? '🎉 達成！' : `あと${fmt(5 - n)}日（${per.end}まで）`);
+    $('duty').innerHTML = `<div class="duty">🎯 年5日取得義務（${per.start}〜${per.end}${per.end < today ? '・期間終了' : ''}）：${fmt(n)} / 5日
+      ${status}${m ? `<div class="ml">予定を含めると ${fmt(n + m)}日</div>` : ''}
       <div class="bar"><div style="width:${Math.min(n / 5, 1) * 100}%"></div></div></div>`;
   } else $('duty').innerHTML = '';
 
@@ -233,8 +262,8 @@ function render() {
       <b>${u.date}（${youbi(u.date)}）</b>
       <span class="chip ${u.days == 0.5 ? 'c-half' : 'c-full'}">${u.days == 0.5 ? '半休' : '全休'}</span>
       ${u.memo ? `<span class="ml">${esc(u.memo)}</span>` : ''}
-      ${unalloc.includes(u.i) ? '<span class="tag t-d">残日数不足</span>' : ''}</div>
-      <button class="del" onclick="delU(${u.i})">削除</button></div>`).join('')
+      ${paid[u.i] < u.days ? '<span class="tag t-d">残日数不足</span>' : ''}</div>
+      <button class="del" onclick="editU(${u.i})">編集</button></div>`).join('')
     : '<div class="empty">休んだら記録しよう ✈️</div>';
 
   const last = lastExport(), stale = last ? dd(last, today) : null;
@@ -246,7 +275,23 @@ function render() {
 }
 
 window.delG = i => { if (confirm('この付与を削除しますか？')) { S.grants.splice(i, 1); render(); } };
-window.delU = i => { S.uses.splice(i, 1); render(); };
+const dayTotal = (d, skip) => S.uses.reduce((s, u, i) => i !== skip && u.date === d ? s + u.days : s, 0);
+
+let editing = -1;
+window.editU = i => {
+  const u = S.uses[i]; editing = i;
+  $('eDate').value = u.date; $('eDays').value = String(u.days); $('eMemo').value = u.memo || '';
+  $('eErr').textContent = ''; $('uDlg').showModal();
+};
+
+// ホーム画面のアプリは再読み込みされずに復帰するので、表示に戻るたびに日付を確かめる
+document.addEventListener('visibilitychange', () => {
+  const t = iso(new Date());
+  if (document.visibilityState !== 'visible' || t === today) return;
+  if ($('uDate').value === today) $('uDate').value = t;
+  if ($('gStart').value === today) { $('gStart').value = t; $('gEnd').value = addY(t, 2); }
+  today = t; render();
+});
 
 $('gStart').addEventListener('input', () => { $('gEnd').value = addY($('gStart').value, 2); });
 ['gDays', 'gStart', 'gEnd'].forEach(id => $(id).addEventListener('input', () => $('gErr').textContent = ''));
@@ -254,15 +299,30 @@ $('gStart').addEventListener('input', () => { $('gEnd').value = addY($('gStart')
 
 $('gOpen').onclick = () => { $('gErr').textContent = ''; $('gDlg').showModal(); };
 $('gCancel').onclick = () => $('gDlg').close();
+$('eCancel').onclick = () => $('uDlg').close();
 // ダイアログ自身の余白をタップしても target は dialog になるため、枠の外かどうかは座標で見る
-$('gDlg').addEventListener('click', e => {
-  const r = $('gDlg').getBoundingClientRect();
-  if (e.target === $('gDlg') && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) $('gDlg').close();
-});
+['gDlg', 'uDlg'].forEach(id => $(id).addEventListener('click', e => {
+  const dlg = $(id), r = dlg.getBoundingClientRect();
+  if (e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) dlg.close();
+}));
+['eDate', 'eDays'].forEach(id => $(id).addEventListener('input', () => $('eErr').textContent = ''));
+
+$('eSave').onclick = () => {
+  const d = $('eDate').value, n = parseFloat($('eDays').value);
+  if (!d) return $('eErr').textContent = '取得日を入力してください';
+  if (dayTotal(d, editing) + n > 1) return $('eErr').textContent = 'その日はすでに1日分記録済みです';
+  S.uses[editing] = { date: d, days: n, memo: $('eMemo').value.trim() };
+  $('uDlg').close(); render();
+};
+$('eDel').onclick = () => {
+  if (!confirm('この記録を削除しますか？')) return;
+  S.uses.splice(editing, 1); $('uDlg').close(); render();
+};
 
 $('gAdd').onclick = () => {
   const d = parseFloat($('gDays').value), s = $('gStart').value, e = $('gEnd').value;
   if (!(d > 0)) return $('gErr').textContent = '日数を入力してください';
+  if (!Number.isInteger(d * 2)) return $('gErr').textContent = '日数は0.5日単位で入力してください';
   if (!s || !e) return $('gErr').textContent = '付与日と期限を入力してください';
   if (e < s) return $('gErr').textContent = '期限は付与日より後にしてください';
   S.grants.push({ days: d, start: s, end: e }); $('gDlg').close(); render(); pop('mRem');
@@ -271,8 +331,7 @@ $('gAdd').onclick = () => {
 $('uAdd').onclick = () => {
   const d = $('uDate').value, n = parseFloat($('uDays').value);
   if (!d) return $('uErr').textContent = '取得日を入力してください';
-  const already = S.uses.filter(u => u.date === d).reduce((s, u) => s + u.days, 0);
-  if (already + n > 1) return $('uErr').textContent = 'その日はすでに1日分記録済みです';
+  if (dayTotal(d, -1) + n > 1) return $('uErr').textContent = 'その日はすでに1日分記録済みです';
   S.uses.push({ date: d, days: n, memo: $('uMemo').value.trim() });
   $('uMemo').value = ''; render(); pop('mRem'); pop('mUsed'); confetti();
 };
@@ -301,7 +360,7 @@ $('file').onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   f.text().then(t => {
     let d;
-    try { d = JSON.parse(t); if (!d.grants || !d.uses) throw 0; }
+    try { d = JSON.parse(t); if (!isData(d)) throw 0; }
     catch (_) { $('msg').textContent = 'ファイル形式が違います'; return; }
     if ((S.grants.length || S.uses.length) &&
       !confirm(`今のデータ（付与${S.grants.length}件・取得${S.uses.length}件）は、このファイルの内容（付与${d.grants.length}件・取得${d.uses.length}件）で上書きされます。復元しますか？`)) return;
