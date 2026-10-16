@@ -60,6 +60,9 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
 .dlg-actions{justify-content:flex-end;flex-wrap:nowrap;margin-top:8px}
 .dlg-actions button{padding:0 14px}
 .dlg-actions .b-danger{margin-right:auto;background:#fff;color:var(--red)}
+.install{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:var(--sky-l);font-weight:700;font-size:14px}
+.install .ml{font-size:12px;color:var(--sub);margin-top:4px}
+.install .del{flex-shrink:0}
 .warn{margin-bottom:16px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:var(--yellow-l);font-weight:700;font-size:14px}
 .bar{flex:1;height:14px;background:var(--sky-l);border:2px solid var(--line);border-radius:999px;overflow:hidden;min-width:60px}
 .bar>div{height:100%;background:repeating-linear-gradient(45deg,var(--sky),var(--sky) 8px,#7fd6ff 8px,#7fd6ff 16px);border-right:2px solid var(--line)}
@@ -100,6 +103,13 @@ details.old[open] summary{margin-bottom:6px}
   <button id="gOpen" class="b-pink h-add">＋ 有休を追加</button>
 </header>
 
+<div class="install" id="install" hidden>
+  <div style="flex:1">📱 ホーム画面に追加して使ってね
+    <div style="font-size:13px;margin-top:4px">共有ボタン（□↑）→「ホーム画面に追加」<br>共有ボタンが見当たらなければ「…」の中にあります</div>
+    <div class="ml">Safari で開いたまま記録すると、ホーム画面のアプリとは別のデータになります</div>
+  </div>
+  <button class="del" id="installClose">閉じる</button>
+</div>
 <div id="warn"></div>
 
 <div class="grid">
@@ -187,6 +197,15 @@ const isHalf = v => typeof v === 'number' && v > 0 && Number.isInteger(v * 2);
 const isData = d => d && Array.isArray(d.grants) && Array.isArray(d.uses)
   && d.grants.every(x => isHalf(x.days) && isDate(x.start) && isDate(x.end) && x.start <= x.end)
   && d.uses.every(u => (u.days === 1 || u.days === 0.5) && isDate(u.date) && (u.memo === undefined || typeof u.memo === 'string'));
+
+// iOS はページからホーム画面への追加を呼び出せないので、手順を案内するだけにする
+const KI = K + '-install-closed';
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+let installClosed = false;
+try { installClosed = localStorage.getItem(KI) === '1'; } catch (e) {}
+$('install').hidden = !isIOS || standalone || installClosed;
+$('installClose').onclick = () => { $('install').hidden = true; try { localStorage.setItem(KI, '1'); } catch (e) {} };
 
 $('gStart').value = today; $('gEnd').value = addY(today, 2); $('uDate').value = today;
 
