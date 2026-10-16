@@ -97,7 +97,7 @@ details.old[open] summary{margin-bottom:6px}
 <header>
   <div class="logo">🌴</div>
   <h1>有休ノート<small>休むのも仕事のうち！</small></h1>
-  <button id="gOpen" class="b-pink h-add">＋ 付与</button>
+  <button id="gOpen" class="b-pink h-add">＋ 有休を追加</button>
 </header>
 
 <div id="warn"></div>
@@ -110,10 +110,10 @@ details.old[open] summary{margin-bottom:6px}
 </div>
 
 <dialog id="gDlg" class="card">
-  <h3>🎁 付与を追加</h3>
+  <h3>🎁 もらった有休を追加</h3>
   <div class="row">
     <label class="f">日数<input id="gDays" type="number" min="0.5" step="0.5" value="10" style="width:90px"></label>
-    <label class="f">付与日<input id="gStart" type="date"></label>
+    <label class="f">もらった日<input id="gStart" type="date"></label>
     <label class="f">期限<input id="gEnd" type="date"></label>
   </div>
   <div class="err" id="gErr"></div>
@@ -150,7 +150,7 @@ details.old[open] summary{margin-bottom:6px}
 </div>
 
 <div class="card">
-  <h3>📦 付与ごとの状況</h3>
+  <h3>📦 有休の内訳</h3>
   <div id="gList"></div>
   <div id="duty"></div>
 </div>
@@ -263,7 +263,7 @@ function render() {
     const tag = ex ? (x.left ? `<span class="tag t-p">${Math.round(p)}%使用</span>` : '<span class="tag t-ok">🎉 使い切り</span>')
       : soon ? '<span class="tag t-w">期限間近！</span>' : '';
     return `<div class="li">
-      <div class="gi"><div><b>${fmt(x.days)}日</b> 付与 ${tag}</div><div class="ml">${x.start} 〜 ${x.end}</div></div>
+      <div class="gi"><div><b>${fmt(x.days)}日分</b> ${tag}</div><div class="ml">${x.start} 〜 ${x.end}</div></div>
       <div class="bar"><div style="width:${p}%"></div></div>
       <div class="gr">${ex ? `使用 ${fmt(x.used)}日${x.left ? `<div class="lost">失効 ${fmt(x.left)}日</div>` : ''}` : `残 ${fmt(x.left)}日`}</div>
       <button class="del" onclick="delG(${x.i})">削除</button></div>`;
@@ -271,8 +271,8 @@ function render() {
   const expired = g.filter(x => x.end < today).sort((a, b) => b.end.localeCompare(a.end));
   $('gList').innerHTML = g.length
     ? g.filter(x => x.end >= today).sort((a, b) => a.end.localeCompare(b.end)).map(grantRow).join('')
-      + (expired.length ? fold('expired', `期限が終わった付与（${expired.length}件・平均 ${Math.round(expired.reduce((s, x) => s + x.used, 0) / expired.reduce((s, x) => s + x.days, 0) * 100)}%使用）`, expired.map(grantRow).join('')) : '')
-    : '<div class="empty">右上の「＋ 付与」から追加してね 🎁</div>';
+      + (expired.length ? fold('expired', `期限が終わった有休（${expired.length}件・平均 ${Math.round(expired.reduce((s, x) => s + x.used, 0) / expired.reduce((s, x) => s + x.days, 0) * 100)}%使用）`, expired.map(grantRow).join('')) : '')
+    : '<div class="empty">右上の「＋ 有休を追加」から登録してね 🎁</div>';
 
   // 年5日取得義務：10日以上の付与の付与日から1年間。今日を含む期間がなければ直近に終わった期間を出す
   const periods = g.filter(x => x.days >= 10 && x.start <= today)
@@ -317,7 +317,7 @@ function render() {
   save();
 }
 
-window.delG = i => { if (confirm('この付与を削除しますか？')) { S.grants.splice(i, 1); render(); } };
+window.delG = i => { if (confirm(`${S.grants[i].start}にもらった${fmt(S.grants[i].days)}日分を削除しますか？`)) { S.grants.splice(i, 1); render(); } };
 const dayTotal = (d, skip) => S.uses.reduce((s, u, i) => i !== skip && u.date === d ? s + u.days : s, 0);
 
 let editing = -1;
@@ -366,8 +366,8 @@ $('gAdd').onclick = () => {
   const d = parseFloat($('gDays').value), s = $('gStart').value, e = $('gEnd').value;
   if (!(d > 0)) return $('gErr').textContent = '日数を入力してください';
   if (!Number.isInteger(d * 2)) return $('gErr').textContent = '日数は0.5日単位で入力してください';
-  if (!s || !e) return $('gErr').textContent = '付与日と期限を入力してください';
-  if (e < s) return $('gErr').textContent = '期限は付与日より後にしてください';
+  if (!s || !e) return $('gErr').textContent = 'もらった日と期限を入力してください';
+  if (e < s) return $('gErr').textContent = '期限はもらった日より後にしてください';
   S.grants.push({ days: d, start: s, end: e }); $('gDlg').close(); render(); pop('mRem');
 };
 
@@ -406,7 +406,7 @@ $('file').onchange = e => {
     try { d = JSON.parse(t); if (!isData(d)) throw 0; }
     catch (_) { $('msg').textContent = 'ファイル形式が違います'; return; }
     if ((S.grants.length || S.uses.length) &&
-      !confirm(`今のデータ（付与${S.grants.length}件・取得${S.uses.length}件）は、このファイルの内容（付与${d.grants.length}件・取得${d.uses.length}件）で上書きされます。復元しますか？`)) return;
+      !confirm(`今のデータ（有休${S.grants.length}件・休んだ記録${S.uses.length}件）は、このファイルの内容（有休${d.grants.length}件・休んだ記録${d.uses.length}件）で上書きされます。復元しますか？`)) return;
     S = d; render(); $('msg').textContent = '復元しました';
   });
   e.target.value = '';
