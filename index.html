@@ -68,7 +68,12 @@ dialog::backdrop{background:rgba(43,35,80,.35)}
 .chip{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}
 .c-full{background:var(--pink-l);color:#d63384}.c-half{background:var(--sky-l);color:#1a7fb5}
 .duty{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--purple-l);font-weight:700;font-size:14px}
-.duty .bar{margin-top:6px;background:#fff}
+.duty .bar{display:flex;margin-top:6px;background:#fff}
+.duty .bar>.plan{background:repeating-linear-gradient(45deg,#d7cbff,#d7cbff 8px,#e9e2ff 8px,#e9e2ff 16px)}
+.duty-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.duty-h b{font-size:20px}
+.duty-h b small{font-size:13px}
+.duty-s{font-size:12px;color:var(--sub);margin-top:4px}
 .duty .bar>div{background:repeating-linear-gradient(45deg,var(--purple),var(--purple) 8px,#b49dff 8px,#b49dff 16px)}
 .empty{color:var(--sub);font-weight:700;font-size:14px;text-align:center;padding:14px}
 .pop{animation:pop .4s ease}
@@ -249,11 +254,13 @@ function render() {
     const inPer = u => u.date >= per.start && u.date <= per.end;
     const n = sumPaid(u => inPer(u) && u.date <= today), m = sumPaid(u => inPer(u) && u.date > today);
     const status = per.end < today
-      ? (n >= 5 ? '🎉 達成' : `⚠️ ${fmt(5 - n)}日足りませんでした`)
-      : (n >= 5 ? '🎉 達成！' : `あと${fmt(5 - n)}日（${per.end}まで）`);
-    $('duty').innerHTML = `<div class="duty">🎯 年5日取得義務（${per.start}〜${per.end}${per.end < today ? '・期間終了' : ''}）：${fmt(n)} / 5日
-      ${status}${m ? `<div class="ml">予定を含めると ${fmt(n + m)}日</div>` : ''}
-      <div class="bar"><div style="width:${Math.min(n / 5, 1) * 100}%"></div></div></div>`;
+      ? (n >= 5 ? `🎉 達成（${per.end}で終了）` : `⚠️ ${fmt(5 - n)}日不足（${per.end}で終了）`)
+      : (n >= 5 ? '🎉 達成！' : `${per.end}までにあと${fmt(5 - n)}日${m ? `（予定 ${fmt(m)}日）` : ''}`);
+    const wN = Math.min(n / 5, 1) * 100, wM = Math.min((n + m) / 5, 1) * 100 - wN;
+    $('duty').innerHTML = `<div class="duty">
+      <div class="duty-h"><span>🎯 年5日の取得義務</span><b>${fmt(n)}<small> / 5日</small></b></div>
+      <div class="bar"><div style="width:${wN}%"></div>${wM > 0 ? `<div class="plan" style="width:${wM}%"></div>` : ''}</div>
+      <div class="duty-s">${status}</div></div>`;
   } else $('duty').innerHTML = '';
 
   $('uList').innerHTML = S.uses.length ? S.uses.map((u, i) => ({ ...u, i }))
