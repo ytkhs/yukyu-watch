@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>有休ウォッチ</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -22,6 +22,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+html{touch-action:manipulation}
 body{margin:0;color:var(--ink);font-family:"M PLUS Rounded 1c",system-ui,sans-serif;line-height:1.6;
   background:#fff8ec;
   background-image:radial-gradient(var(--pink-l) 2px,transparent 2px),radial-gradient(var(--sky-l) 2px,transparent 2px);
@@ -190,6 +191,8 @@ let S = { grants: [], uses: [] };
 try { const r = localStorage.getItem(K); if (r) S = JSON.parse(r); } catch (e) {}
 
 const $ = id => document.getElementById(id);
+// iOS Safari は user-scalable=no を無視するため、ピンチ操作そのものを止める
+document.addEventListener('gesturestart', e => e.preventDefault());
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 let today = iso(new Date());
