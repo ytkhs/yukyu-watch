@@ -408,7 +408,7 @@ $('uAdd').onclick = () => {
 };
 
 $('exp').onclick = async () => {
-  const name = `yukyu-watch-${today}.json`;
+  const name = 'yukyu-watch.json';
   const file = new File([JSON.stringify(S, null, 1)], name, { type: 'application/json' });
   try {
     // PCの共有シートには「ファイルに保存」がないため、共有はタッチ端末に限る
